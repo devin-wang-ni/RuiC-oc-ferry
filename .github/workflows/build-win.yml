@@ -1,17 +1,34 @@
 name: Build Tauri Windows
 on:
-  workflow_dispatch: # ✅ 可以手动点击触发，最适合你
+  workflow_dispatch:
 
 jobs:
-  build-tauri:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [windows-latest]
-    runs-on: ${{ matrix.platform }}
+  build:
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Tauri App
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build Windows NSIS installer
+        run: npm run build:win
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: oc-ferry-win-setup
+          path: src-tauri/target/release/*.exe
